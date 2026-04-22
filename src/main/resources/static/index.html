@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Expense Splitte</title>
+  <title>Expense Splitter</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -227,8 +227,8 @@
 <body>
 
 <header>
-  <h1>SplitIt</h1>
-  <span>Expense Splitter · Spring Boot + H2</span>
+  <h1>SpLitIt</h1>
+  <span>Expense Splitter</span>
 </header>
 
 <div class="layout">
@@ -370,7 +370,7 @@
     const settlements = await fetchJSON(`${API}/settle`);
     const div = document.getElementById('settlementResult');
     if (settlements.length === 0) {
-      div.innerHTML = '<div class="empty">✅ All settled up! No payments needed.</div>';
+      div.innerHTML = '<div class="empty"> All settled up! No payments needed.</div>';
       return;
     }
     div.innerHTML = settlements.map(s => `
