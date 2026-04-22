@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Expense Splitter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e0e;
+      --surface: #181818;
+      --surface2: #222222;
+      --border: #2e2e2e;
+      --accent: #c8f135;
+      --accent-dim: #9db82a;
+      --text: #f0f0f0;
+      --muted: #777;
+      --danger: #ff5c5c;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      max-width: 860px;
+      margin: 0 auto 2.5rem;
+      display: flex;
+      align-items: flex-end;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.2rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--accent);
+    }
+
+    header span {
+      font-family: 'Spline Sans Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .layout {
+      max-width: 860px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .full-width { grid-column: 1 / -1; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+    }
+
+    .card h2 {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      font-family: 'Spline Sans Mono', monospace;
+    }
+
+    input, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.55rem 0.8rem;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      margin-bottom: 0.7rem;
+      outline: none;
+      transition: border 0.15s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    select[multiple] {
+      height: 100px;
+    }
+
+    select option {
+      padding: 4px 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0.55rem 1.2rem;
+      border-radius: 6px;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0e0e0e;
+      width: 100%;
+    }
+
+    .btn-primary:hover { background: var(--accent-dim); }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      padding: 3px 10px;
+      font-size: 12px;
+      border-radius: 4px;
+    }
+
+    .btn-danger:hover { background: #ff5c5c22; }
+
+    .btn-settle {
+      background: var(--accent);
+      color: #0e0e0e;
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 15px;
+    }
+
+    .btn-settle:hover { background: var(--accent-dim); }
+
+    .list { list-style: none; margin-top: 0.5rem; }
+
+    .list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.7rem;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 4px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+
+    .list li .info { flex: 1; }
+    .list li .info .name { font-weight: 500; }
+    .list li .info .sub {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'Spline Sans Mono', monospace;
+      margin-top: 1px;
+    }
+
+    .amount-badge {
+      font-family: 'Spline Sans Mono', monospace;
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 500;
+      margin-right: 10px;
+    }
+
+    .settlement-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .settlement-item .arrow { color: var(--muted); }
+
+    .settlement-item .from { font-weight: 600; color: var(--danger); }
+    .settlement-item .to { font-weight: 600; color: var(--accent); }
+    .settlement-item .amt {
+      margin-left: auto;
+      font-family: 'Spline Sans Mono', monospace;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .empty {
+      color: var(--muted);
+      font-size: 13px;
+      font-family: 'Spline Sans Mono', monospace;
+      text-align: center;
+      padding: 1rem 0;
+    }
+
+    .label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      font-family: 'Spline Sans Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>SplitIt</h1>
+  <span>Expense Splitter · Spring Boot + H2</span>
+</header>
+
+<div class="layout">
+
+  <!-- Add Person -->
+  <div class="card">
+    <h2>People</h2>
+    <input type="text" id="personName" placeholder="Enter name" />
+    <button class="btn btn-primary" onclick="addPerson()">+ Add Person</button>
+    <ul class="list" id="peopleList"></ul>
+  </div>
+
+  <!-- Add Expense -->
+  <div class="card">
+    <h2>Add Expense</h2>
+    <input type="text" id="expDesc" placeholder="Description (e.g. Dinner)" />
+    <input type="number" id="expAmount" placeholder="Amount (₹)" min="0" step="0.01" />
+    <div class="label">Paid by</div>
+    <select id="paidBy"></select>
+    <div class="label">Split among (hold Ctrl to select multiple)</div>
+    <select id="splitAmong" multiple></select>
+    <button class="btn btn-primary" style="margin-top:0.5rem" onclick="addExpense()">+ Add Expense</button>
+  </div>
+
+  <!-- Expense List -->
+  <div class="card full-width">
+    <h2>Expenses</h2>
+    <ul class="list" id="expenseList"></ul>
+  </div>
+
+  <!-- Settlement -->
+  <div class="card full-width">
+    <h2>Settlement</h2>
+    <button class="btn btn-settle" onclick="getSettlement()">Calculate Who Owes Whom</button>
+    <div id="settlementResult" style="margin-top:1rem;"></div>
+  </div>
+
+</div>
+
+<script>
+  const API = 'http://localhost:8080/api';
+
+  async function fetchJSON(url, opts = {}) {
+    const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts });
+    if (!res.ok) { const t = await res.text(); throw new Error(t); }
+    return res.json();
+  }
+
+  // --- People ---
+  async function loadPeople() {
+    const people = await fetchJSON(`${API}/people`);
+    renderPeople(people);
+    renderSelects(people);
+  }
+
+  function renderPeople(people) {
+    const list = document.getElementById('peopleList');
+    list.innerHTML = people.length ? '' : '<li class="empty">No people added yet</li>';
+    people.forEach(p => {
+      const li = document.createElement('li');
+      li.innerHTML = `<div class="info"><div class="name">${p.name}</div></div>
+        <button class="btn btn-danger" onclick="deletePerson(${p.id})">Remove</button>`;
+      list.appendChild(li);
+    });
+  }
+
+  function renderSelects(people) {
+    ['paidBy', 'splitAmong'].forEach(id => {
+      const sel = document.getElementById(id);
+      sel.innerHTML = people.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    });
+  }
+
+  async function addPerson() {
+    const name = document.getElementById('personName').value.trim();
+    if (!name) return alert('Enter a name');
+    await fetchJSON(`${API}/people`, { method: 'POST', body: JSON.stringify({ name }) });
+    document.getElementById('personName').value = '';
+    loadPeople();
+    loadExpenses();
+  }
+
+  async function deletePerson(id) {
+    await fetch(`${API}/people/${id}`, { method: 'DELETE' });
+    loadPeople();
+    loadExpenses();
+  }
+
+  // --- Expenses ---
+  async function loadExpenses() {
+    const expenses = await fetchJSON(`${API}/expenses`);
+    renderExpenses(expenses);
+  }
+
+  function renderExpenses(expenses) {
+    const list = document.getElementById('expenseList');
+    list.innerHTML = expenses.length ? '' : '<li class="empty">No expenses added yet</li>';
+    expenses.forEach(e => {
+      const li = document.createElement('li');
+      const among = e.splitAmong.map(p => p.name).join(', ');
+      li.innerHTML = `
+        <div class="info">
+          <div class="name">${e.description}</div>
+          <div class="sub">Paid by ${e.paidBy.name} · Split among: ${among}</div>
+        </div>
+        <span class="amount-badge">₹${e.amount.toFixed(2)}</span>
+        <button class="btn btn-danger" onclick="deleteExpense(${e.id})">Remove</button>`;
+      list.appendChild(li);
+    });
+  }
+
+  async function addExpense() {
+    const description = document.getElementById('expDesc').value.trim();
+    const amount = parseFloat(document.getElementById('expAmount').value);
+    const paidById = parseInt(document.getElementById('paidBy').value);
+    const splitAmongIds = [...document.getElementById('splitAmong').selectedOptions].map(o => parseInt(o.value));
+
+    if (!description || isNaN(amount) || amount <= 0) return alert('Fill in description and a valid amount');
+    if (!paidById) return alert('Select who paid');
+    if (splitAmongIds.length === 0) return alert('Select at least one person to split among');
+
+    await fetchJSON(`${API}/expenses`, {
+      method: 'POST',
+      body: JSON.stringify({ description, amount, paidById, splitAmongIds })
+    });
+
+    document.getElementById('expDesc').value = '';
+    document.getElementById('expAmount').value = '';
+    loadExpenses();
+  }
+
+  async function deleteExpense(id) {
+    await fetch(`${API}/expenses/${id}`, { method: 'DELETE' });
+    loadExpenses();
+  }
+
+  // --- Settlement ---
+  async function getSettlement() {
+    const settlements = await fetchJSON(`${API}/settle`);
+    const div = document.getElementById('settlementResult');
+    if (settlements.length === 0) {
+      div.innerHTML = '<div class="empty">✅ All settled up! No payments needed.</div>';
+      return;
+    }
+    div.innerHTML = settlements.map(s => `
+      <div class="settlement-item">
+        <span class="from">${s.from}</span>
+        <span class="arrow">→ owes →</span>
+        <span class="to">${s.to}</span>
+        <span class="amt">₹${s.amount.toFixed(2)}</span>
+      </div>
+    `).join('');
+  }
+
+  // Init
+  loadPeople();
+  loadExpenses();
+</script>
+</body>
+</html>
