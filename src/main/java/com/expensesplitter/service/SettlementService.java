@@ -10,7 +10,6 @@ import java.util.*;
 
 @Service
 public class SettlementService {
-
     private final ExpenseRepository expenseRepo;
     private final PersonRepository personRepo;
 
@@ -19,11 +18,10 @@ public class SettlementService {
         this.personRepo = personRepo;
     }
 
-    public List<Map<String, Object>> calculateSettlements() {
-        List<Person> people = personRepo.findAll();
-        List<Expense> expenses = expenseRepo.findAll();
+    public List<Map<String, Object>> calculateSettlements(String groupId) {
+        List<Person> people = personRepo.findByGroupId(groupId);
+        List<Expense> expenses = expenseRepo.findByGroupId(groupId);
 
-        // net balance per person: positive = owed money, negative = owes money
         Map<Long, Double> balance = new HashMap<>();
         for (Person p : people) balance.put(p.getId(), 0.0);
 
@@ -32,17 +30,14 @@ public class SettlementService {
             if (count == 0) continue;
             double share = e.getAmount() / count;
 
-            // paidBy gets credit
             Long payerId = e.getPaidBy().getId();
             balance.merge(payerId, e.getAmount(), Double::sum);
 
-            // each participant owes their share
             for (Person p : e.getSplitAmong()) {
                 balance.merge(p.getId(), -share, Double::sum);
             }
         }
 
-        // greedy settlement
         Map<Long, String> nameMap = new HashMap<>();
         for (Person p : people) nameMap.put(p.getId(), p.getName());
 
@@ -55,7 +50,6 @@ public class SettlementService {
         }
 
         List<Map<String, Object>> settlements = new ArrayList<>();
-
         int i = 0, j = 0;
         while (i < creditors.size() && j < debtors.size()) {
             Map.Entry<Long, Double> creditor = creditors.get(i);

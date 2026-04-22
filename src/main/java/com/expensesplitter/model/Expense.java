@@ -5,11 +5,10 @@ import java.util.List;
 
 @Entity
 public class Expense {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    private String groupId;
     private String description;
     private double amount;
 
@@ -20,8 +19,9 @@ public class Expense {
     private List<Person> splitAmong;
 
     public Expense() {}
-
     public Long getId() { return id; }
+    public String getGroupId() { return groupId; }
+    public void setGroupId(String groupId) { this.groupId = groupId; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     public double getAmount() { return amount; }

@@ -98,17 +98,10 @@
       transition: border 0.15s;
     }
 
-    input:focus, select:focus {
-      border-color: var(--accent);
-    }
+    input:focus, select:focus { border-color: var(--accent); }
 
-    select[multiple] {
-      height: 100px;
-    }
-
-    select option {
-      padding: 4px 8px;
-    }
+    select[multiple] { height: 100px; }
+    select option { padding: 4px 8px; }
 
     .btn {
       display: inline-flex;
@@ -125,12 +118,7 @@
       transition: all 0.15s;
     }
 
-    .btn-primary {
-      background: var(--accent);
-      color: #0e0e0e;
-      width: 100%;
-    }
-
+    .btn-primary { background: var(--accent); color: #0e0e0e; width: 100%; }
     .btn-primary:hover { background: var(--accent-dim); }
 
     .btn-danger {
@@ -141,7 +129,6 @@
       font-size: 12px;
       border-radius: 4px;
     }
-
     .btn-danger:hover { background: #ff5c5c22; }
 
     .btn-settle {
@@ -151,8 +138,17 @@
       padding: 0.75rem;
       font-size: 15px;
     }
-
     .btn-settle:hover { background: var(--accent-dim); }
+
+    .btn-share {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 0.55rem 1.2rem;
+      width: 100%;
+      margin-top: 0.7rem;
+    }
+    .btn-share:hover { background: #c8f13522; }
 
     .list { list-style: none; margin-top: 0.5rem; }
 
@@ -198,7 +194,6 @@
     }
 
     .settlement-item .arrow { color: var(--muted); }
-
     .settlement-item .from { font-weight: 600; color: var(--danger); }
     .settlement-item .to { font-weight: 600; color: var(--accent); }
     .settlement-item .amt {
@@ -222,6 +217,14 @@
       margin-bottom: 4px;
       font-family: 'Spline Sans Mono', monospace;
     }
+
+    .group-id-box {
+      font-family: 'Spline Sans Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 0.5rem;
+      word-break: break-all;
+    }
   </style>
 </head>
 <body>
@@ -232,6 +235,14 @@
 </header>
 
 <div class="layout">
+
+  <!-- Group -->
+  <div class="card full-width">
+    <h2>Your Group</h2>
+    <div class="group-id-box" id="groupIdDisplay">Loading group...</div>
+    <button class="btn btn-share" onclick="shareGroup()">Copy Shareable Link</button>
+    <button class="btn btn-primary" style="margin-top:0.7rem" onclick="newGroup()">+ New Group</button>
+  </div>
 
   <!-- Add Person -->
   <div class="card">
@@ -270,6 +281,7 @@
 
 <script>
   const API = window.location.origin + '/api';
+  let groupId = null;
 
   async function fetchJSON(url, opts = {}) {
     const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts });
@@ -277,9 +289,52 @@
     return res.json();
   }
 
+  async function init() {
+    // Priority: URL param > localStorage > create new
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlGroup = urlParams.get('g');
+
+    if (urlGroup) {
+      groupId = urlGroup;
+      localStorage.setItem('groupId', groupId);
+    } else {
+      groupId = localStorage.getItem('groupId');
+    }
+
+    if (!groupId) {
+      const group = await fetchJSON(`${API}/groups`, { method: 'POST' });
+      groupId = group.id;
+      localStorage.setItem('groupId', groupId);
+    }
+
+    history.replaceState(null, '', `?g=${groupId}`);
+    document.getElementById('groupIdDisplay').textContent = `Group ID: ${groupId}`;
+
+    loadPeople();
+    loadExpenses();
+  }
+
+  async function newGroup() {
+    if (!confirm('Start a new group? This browser will leave the current group.')) return;
+    localStorage.removeItem('groupId');
+    groupId = null;
+    const group = await fetchJSON(`${API}/groups`, { method: 'POST' });
+    groupId = group.id;
+    localStorage.setItem('groupId', groupId);
+    history.replaceState(null, '', `?g=${groupId}`);
+    document.getElementById('groupIdDisplay').textContent = `Group ID: ${groupId}`;
+    loadPeople();
+    loadExpenses();
+  }
+
+  function shareGroup() {
+    const url = `${window.location.origin}${window.location.pathname}?g=${groupId}`;
+    navigator.clipboard.writeText(url).then(() => alert('Link copied! Share it with your group.'));
+  }
+
   // --- People ---
   async function loadPeople() {
-    const people = await fetchJSON(`${API}/people`);
+    const people = await fetchJSON(`${API}/people?groupId=${groupId}`);
     renderPeople(people);
     renderSelects(people);
   }
@@ -305,7 +360,10 @@
   async function addPerson() {
     const name = document.getElementById('personName').value.trim();
     if (!name) return alert('Enter a name');
-    await fetchJSON(`${API}/people`, { method: 'POST', body: JSON.stringify({ name }) });
+    await fetchJSON(`${API}/people`, {
+      method: 'POST',
+      body: JSON.stringify({ name, groupId })
+    });
     document.getElementById('personName').value = '';
     loadPeople();
     loadExpenses();
@@ -319,7 +377,7 @@
 
   // --- Expenses ---
   async function loadExpenses() {
-    const expenses = await fetchJSON(`${API}/expenses`);
+    const expenses = await fetchJSON(`${API}/expenses?groupId=${groupId}`);
     renderExpenses(expenses);
   }
 
@@ -352,7 +410,7 @@
 
     await fetchJSON(`${API}/expenses`, {
       method: 'POST',
-      body: JSON.stringify({ description, amount, paidById, splitAmongIds })
+      body: JSON.stringify({ description, amount, paidById, splitAmongIds, groupId })
     });
 
     document.getElementById('expDesc').value = '';
@@ -367,10 +425,10 @@
 
   // --- Settlement ---
   async function getSettlement() {
-    const settlements = await fetchJSON(`${API}/settle`);
+    const settlements = await fetchJSON(`${API}/settle?groupId=${groupId}`);
     const div = document.getElementById('settlementResult');
     if (settlements.length === 0) {
-      div.innerHTML = '<div class="empty"> All settled up! No payments needed.</div>';
+      div.innerHTML = '<div class="empty">All settled up! No payments needed.</div>';
       return;
     }
     div.innerHTML = settlements.map(s => `
@@ -383,9 +441,7 @@
     `).join('');
   }
 
-  // Init
-  loadPeople();
-  loadExpenses();
+  init();
 </script>
 </body>
 </html>
